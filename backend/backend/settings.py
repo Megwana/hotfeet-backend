@@ -35,7 +35,9 @@ DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [
+    '8000-megwana-hotfeetbackend-2gkhiygoy9b.ws-eu105.gitpod.io'
+]
 
 
 # Application definition
