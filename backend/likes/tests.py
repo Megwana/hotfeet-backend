@@ -8,8 +8,14 @@ from rest_framework.test import APITestCase
 class LikeListViewTests(APITestCase):
     def setUp(self):
         self.adam = User.objects.create_user(username='adam', password='pass')
-        self.brian = User.objects.create_user(username='brian', password='pass')
-        self.test_post = Post.objects.create(owner=self.adam, title="Test Post")
+        self.brian = User.objects.create_user(
+            username='brian',
+            password='pass'
+            )
+        self.test_post = Post.objects.create(
+            owner=self.adam,
+            title="Test Post"
+            )
         Like.objects.create(owner=self.adam, post=self.test_post)
         Like.objects.create(owner=self.brian, post=self.test_post)
 
@@ -38,8 +44,14 @@ class LikeListViewTests(APITestCase):
 class LikeDetailViewTests(APITestCase):
     def setUp(self):
         self.adam = User.objects.create_user(username='adam', password='pass')
-        self.brian = User.objects.create_user(username='brian', password='pass')
-        self.test_post = Post.objects.create(owner=self.adam, title="Test Post")
+        self.brian = User.objects.create_user(
+            username='brian',
+            password='pass'
+            )
+        self.test_post = Post.objects.create(
+            owner=self.adam,
+            title="Test Post"
+            )
         Like.objects.create(owner=self.adam, post=self.test_post)
         Like.objects.create(owner=self.brian, post=self.test_post)
 
