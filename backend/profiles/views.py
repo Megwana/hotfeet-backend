@@ -4,7 +4,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from .models import Profile
 from .serializers import ProfileSerializer
-from .permissions import IsOwnerOrReadOnly
+from backend.permissions import IsOwnerOrReadOnly
 
 
 class ProfileList(APIView):
