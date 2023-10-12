@@ -12,10 +12,8 @@ class Post(models.Model):
     title = models.CharField(max_length=255)
     content = models.TextField(blank=True)
     image = models.ImageField(
-        upload_to='images/',
-        default='../banner_rzae6b',
-        blank=True
-        )
+        upload_to='images/', default='../banner_rzae6b', blank=True
+    )
 
     class Meta:
         ordering = ['-created_at']
