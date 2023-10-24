@@ -1,4 +1,5 @@
 from rest_framework import generics, permissions
+from backend.permissions import IsOwnerOrReadOnly
 from .models import Poll, Vote
 from .serializers import PollSerializer, VoteSerializer
 
