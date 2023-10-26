@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from .models import Poll, Vote, RunningShoe
+from posts.serializers import PostSerializer
 
 
 class RunningShoeSerializer(serializers.ModelSerializer):
@@ -15,7 +16,7 @@ class VoteSerializer(serializers.ModelSerializer):
 
 
 class PollSerializer(serializers.ModelSerializer):
-    shoes = RunningShoeSerializer(many=True)
+    shoes = PostSerializer(many=True)
 
     class Meta:
         model = Poll
