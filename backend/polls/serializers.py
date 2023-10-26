@@ -39,8 +39,7 @@ class PollSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         shoe_data = validated_data.pop('shoes')
         poll = Poll.objects.create(**validated_data)
-
         for shoe in shoe_data:
-            RunningShoe.objects.create(poll=poll, **shoe)
+            poll.shoes.add(shoe)
 
         return poll
