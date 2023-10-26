@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Poll, Vote, RunningShoe
+from .models import Poll, Vote, RunningShoe, Post
 from posts.serializers import PostSerializer
 
 
@@ -16,7 +16,8 @@ class VoteSerializer(serializers.ModelSerializer):
 
 
 class PollSerializer(serializers.ModelSerializer):
-    shoes = PostSerializer(many=True)
+    shoes = serializers.PrimaryKeyRelatedField(many=True, queryset=Post.objects.all())
+    owner = serializers.ReadOnlyField(source='owner.username')
 
     class Meta:
         model = Poll

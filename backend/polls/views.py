@@ -18,6 +18,15 @@ class PollDetail(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [IsOwnerOrReadOnly]
     queryset = Poll.objects.all()
 
+    def update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        if instance.owner != request.user:
+            return Response({
+                "error": "You don't have permission to change this poll."
+                }, status=HTTP_403_FORBIDDEN)
+
+        return super(PollDetail, self).update(request, *args, **kwargs)
+
 
 class VoteCreate(generics.CreateAPIView):
     serializer_class = VoteSerializer
