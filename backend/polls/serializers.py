@@ -16,7 +16,10 @@ class VoteSerializer(serializers.ModelSerializer):
 
 
 class PollSerializer(serializers.ModelSerializer):
-    shoes = serializers.PrimaryKeyRelatedField(many=True, queryset=Post.objects.all())
+    shoes = serializers.PrimaryKeyRelatedField(
+        many=True,
+        queryset=Post.objects.all()
+        )
     owner = serializers.ReadOnlyField(source='owner.username')
 
     class Meta:
