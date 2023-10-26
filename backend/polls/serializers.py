@@ -15,8 +15,7 @@ class VoteSerializer(serializers.ModelSerializer):
 
 
 class PollSerializer(serializers.ModelSerializer):
-    votes = VoteSerializer(many=True, read_only=True)
-    shoes = RunningShoeSerializer(many=True, read_only=True)
+    shoes = RunningShoeSerializer(many=True)
 
     class Meta:
         model = Poll
@@ -26,6 +25,20 @@ class PollSerializer(serializers.ModelSerializer):
             'created_at',
             'updated_at',
             'owner',
-            'votes',
             'shoes'
             ]
+
+    def validate_shoes(self, shoes):
+        if 2 <= len(shoes) <= 4:
+            return shoes
+        raise serializers.ValidationError(
+            "A poll must have between 2 to 4 shoe options.")
+
+    def create(self, validated_data):
+        shoe_data = validated_data.pop('shoes')
+        poll = Poll.objects.create(**validated_data)
+
+        for shoe in shoe_data:
+            RunningShoe.objects.create(poll=poll, **shoe)
+
+        return poll
