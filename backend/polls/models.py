@@ -17,6 +17,7 @@ class Poll(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     owner = models.ForeignKey(User, on_delete=models.CASCADE)
+    vote_count = models.PositiveIntegerField(default=0)
 
     def __str__(self):
         return self.question

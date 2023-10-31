@@ -21,6 +21,7 @@ class PollSerializer(serializers.ModelSerializer):
         queryset=Post.objects.all()
         )
     owner = serializers.ReadOnlyField(source='owner.username')
+    vote_count = serializers.ReadOnlyField()
 
     class Meta:
         model = Poll
@@ -30,7 +31,8 @@ class PollSerializer(serializers.ModelSerializer):
             'created_at',
             'updated_at',
             'owner',
-            'shoes'
+            'shoes',
+            'vote_count',
             ]
 
     def validate_shoes(self, shoes):
