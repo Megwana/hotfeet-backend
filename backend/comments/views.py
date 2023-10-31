@@ -1,4 +1,5 @@
-from rest_framework import generics, permissions
+from rest_framework import generics, permissions, filters
+from django_filters.rest_framework import DjangoFilterBackend
 from backend.permissions import IsOwnerOrReadOnly
 from .models import Comment
 from .serializers import CommentSerializer, CommentDetailSerializer
@@ -14,6 +15,12 @@ class CommentList(generics.ListCreateAPIView):
 
     def perform_create(self, serializer):
         serializer.save(owner=self.request.user)
+    filter_backends = [
+        DjangoFilterBackend,
+    ]
+    filterset_fields = [
+        'post',
+    ]
 
 
 class CommentDetail(generics.RetrieveUpdateDestroyAPIView):
