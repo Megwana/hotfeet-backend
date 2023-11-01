@@ -6,6 +6,7 @@ from .models import Poll, Vote, RunningShoe
 from django.shortcuts import get_object_or_404, render, redirect
 from django.http import HttpResponse
 from .serializers import PollSerializer, VoteSerializer
+from django.db.models import Count, F
 
 
 class PollList(generics.ListCreateAPIView):
@@ -50,25 +51,60 @@ class VoteCreate(generics.CreateAPIView):
     serializer_class = VoteSerializer
     permission_classes = [permissions.IsAuthenticated]
 
-    def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        poll_id = self.request.data.get('poll')
+        try:
+            poll = Poll.objects.get(pk=poll_id)
+            context['poll'] = poll
+            context['available_shoes'] = poll.shoes.all()
+        except Poll.DoesNotExist:
+            context['poll'] = None
+            context['available_shoes'] = []
+        return context
 
-    def vote(request, poll_id):
-        poll = get_object_or_404(Poll, pk=poll_id)
+    def create(self, request, *args, **kwargs):
+        user = request.user
+        poll = self.get_serializer_context()['poll']
+        shoe = self.get_serializer_context()['available_shoes'].filter(
+            pk=request.data['shoe']).first()
 
-        if request.method == 'POST':
-            shoe_id = request.POST['shoe']
-            shoe = get_object_or_404(RunningShoe, pk=shoe_id)
+        if not poll or not shoe:
+            return Response(
+                {"error": "Invalid poll or shoe selection."},
+                status=status.HTTP_400_BAD_REQUEST
+                )
 
-            # Check if the user has already voted in this poll
-            if Vote.objects.filter(user=request.user, poll=poll).exists():
-                return HttpResponse("You have already voted in this poll.")
+        # Check if the user has already voted in this poll
+        has_voted = Vote.objects.filter(user=user, poll=poll).exists()
+
+        if has_voted:
+            existing_vote = Vote.objects.get(user=user, poll=poll)
+            if existing_vote.shoe == shoe:
+                # User is trying to vote for the same shoe again, reject vote
+                return Response(
+                    {"error": "You have already voted for this running shoe."},
+                    status=status.HTTP_400_BAD_REQUEST
+                    )
             else:
-                # Create a new vote
-                Vote.objects.create(user=request.user, poll=poll, shoe=shoe)
-                # Update the poll's vote count
-                poll.vote_count += 1
-                poll.save()
-                return redirect('poll_detail', poll_id=poll.id)
+                # User has voted before, update their vote to a different shoe
+                serializer = self.get_serializer(
+                    existing_vote, data=request.data,
+                    partial=True
+                    )
+                serializer.is_valid(raise_exception=True)
+                serializer.save()
+        else:
+            # User is voting for the first time in this poll
+            serializer = self.get_serializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            serializer.save(user=user)
 
-        return render(request, 'polls/vote.html', {'poll': poll})
+            # Increment vote count in the poll using F expression
+            Poll.objects.filter(pk=poll.pk).update(
+                vote_count=F('vote_count') + 1)
+
+        return Response(
+            {"message": "Your vote has been recorded."},
+            status=status.HTTP_201_CREATED
+            )

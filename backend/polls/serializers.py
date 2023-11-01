@@ -14,7 +14,7 @@ class RunningShoeSerializer(serializers.ModelSerializer):
 class VoteSerializer(serializers.ModelSerializer):
     class Meta:
         model = Vote
-        fields = ['user', 'poll', 'shoe']
+        fields = ['poll', 'shoe']
 
 
 class PollSerializer(serializers.ModelSerializer):
@@ -61,6 +61,14 @@ class PollSerializer(serializers.ModelSerializer):
         value = value.lower()
 
         return value
+
+    def validate_repeat(self, data):
+        user = self.context['request'].user
+        poll = data['poll']
+        if Vote.objects.filter(user=user, poll=poll).exists():
+            raise serializers.ValidationError(
+                "You have already voted in this poll.")
+        return data
 
     def create(self, validated_data):
         shoe_data = validated_data.pop('shoes')
