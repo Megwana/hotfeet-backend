@@ -55,6 +55,15 @@ INSTALLED_APPS = [
     'rest_framework',
     'django_filters',
     'textblob',
+    'rest_framework.authtoken',
+    'dj_rest_auth',
+
+    'django.contrib.sites',
+    'allauth',
+    'allauth.account',
+    'allauth.socialaccount',
+    'dj_rest_auth.registration',
+
 
     'profiles',
     'posts',
@@ -63,6 +72,8 @@ INSTALLED_APPS = [
     'followers',
     'polls',
 ]
+
+SITE_ID = 1
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
