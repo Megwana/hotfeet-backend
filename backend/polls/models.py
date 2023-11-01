@@ -26,10 +26,10 @@ class Poll(models.Model):
 class Vote(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     poll = models.ForeignKey(
-        Poll, related_name='votes',
-        on_delete=models.CASCADE
-        )
-    shoe = models.ForeignKey(RunningShoe, on_delete=models.CASCADE)
+        Poll,
+        related_name='votes',
+        on_delete=models.CASCADE)
+    shoe = models.ForeignKey(Post, on_delete=models.CASCADE)
 
     class Meta:
-        unique_together = ('user', 'poll')  # Only one vote per user each poll.
+        unique_together = ('user', 'poll', 'shoe')
