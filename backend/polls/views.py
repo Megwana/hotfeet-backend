@@ -1,4 +1,5 @@
-from rest_framework import generics, permissions, filters
+from rest_framework import generics, permissions, filters, status
+from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
 from backend.permissions import IsOwnerOrReadOnly
 from .models import Poll, Vote
@@ -15,8 +16,9 @@ class PollList(generics.ListCreateAPIView):
         DjangoFilterBackend,
     ]
     filterset_fields = [
-        '',
+        'vote_count',
     ]
+
     def perform_create(self, serializer):
         serializer.save(owner=self.request.user)
 
@@ -34,6 +36,12 @@ class PollDetail(generics.RetrieveUpdateDestroyAPIView):
                 }, status=HTTP_403_FORBIDDEN)
 
         return super(PollDetail, self).update(request, *args, **kwargs)
+
+
+class PollVoteList(generics.ListCreateAPIView):
+    queryset = Poll.objects.all()
+    serializer_class = PollSerializer
+    permission_classes = [permissions.IsAuthenticated]
 
 
 class VoteCreate(generics.CreateAPIView):

@@ -1,6 +1,8 @@
 from rest_framework import serializers
 from .models import Poll, Vote, RunningShoe, Post
 from posts.serializers import PostSerializer
+from django.core.exceptions import ValidationError
+from textblob import TextBlob
 
 
 class RunningShoeSerializer(serializers.ModelSerializer):
@@ -40,6 +42,25 @@ class PollSerializer(serializers.ModelSerializer):
             return shoes
         raise serializers.ValidationError(
             "A poll must have between 2 to 4 shoe options.")
+
+    def validate(self, data):
+        question = data['question']
+        shoes = data['shoes']
+        if Poll.objects.filter(question=question, shoes__in=shoes).exists():
+            raise serializers.ValidationError(
+                "A poll with the same question and shoes already exists.")
+
+        return data
+
+    def validate_question(self, value):
+        text_blob = TextBlob(value)
+        if text_blob.correct() != text_blob:
+            raise serializers.ValidationError(
+                "Question contains grammatical errors. Please review")
+
+        value = value.lower()
+
+        return value
 
     def create(self, validated_data):
         shoe_data = validated_data.pop('shoes')
