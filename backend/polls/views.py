@@ -108,3 +108,31 @@ class VoteCreate(generics.CreateAPIView):
             {"message": "Your vote has been recorded."},
             status=status.HTTP_201_CREATED
             )
+
+
+class VoteDelete(generics.DestroyAPIView):
+    serializer_class = VoteSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_object(self):
+        # Get the vote object for the user and the specified poll
+        user = self.request.user
+        poll_id = self.kwargs['poll_id']
+        return get_object_or_404(Vote, user=user, poll_id=poll_id)
+
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        # Get the associated poll
+        poll = instance.poll
+        # Decrement the poll's vote_count
+        poll.vote_count -= 1
+        poll.save()
+        # Capture vote details before deletion
+        vote_details = VoteSerializer(instance).data
+        # Delete the vote
+        self.perform_destroy(instance)
+        # Return vote details in the response
+        return Response({
+            "message": "Your vote has been removed.",
+            "unvoted_vote_details": vote_details
+        }, status=status.HTTP_204_NO_CONTENT)
