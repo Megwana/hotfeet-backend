@@ -1,3 +1,6 @@
 from django.contrib import admin
+from .models import Like
 
-# Register your models here.
+@admin.register(Like)
+class FollowerAdmin(admin.ModelAdmin):
+    list_display = ('owner', 'post', 'created_at')
