@@ -1,14 +1,14 @@
 from rest_framework import serializers
-from .models import Poll, Vote, RunningShoe, Post
+from .models import Poll, Vote, Post
 from posts.serializers import PostSerializer
 from django.core.exceptions import ValidationError
 from textblob import TextBlob
 
 
-class RunningShoeSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = RunningShoe
-        fields = ['id', 'name', 'image']
+# class RunningShoeSerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model = RunningShoe
+#         fields = ['id', 'name', 'image']
 
 
 class VoteSerializer(serializers.ModelSerializer):
@@ -56,7 +56,7 @@ class PollSerializer(serializers.ModelSerializer):
         text_blob = TextBlob(value)
         if text_blob.correct() != text_blob:
             raise serializers.ValidationError(
-                "Question contains grammatical errors. Please review")
+                "Question contains grammatical errors. Did you mean? " + text_blob.correct())
 
         value = value.lower()
 

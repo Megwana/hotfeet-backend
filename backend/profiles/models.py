@@ -10,7 +10,8 @@ class Profile(models.Model):
     name = models.CharField(max_length=255, blank=True)
     content = models.TextField(blank=True)
     image = models.ImageField(
-        upload_to='images/', default='../banner_rzae6b'
+        upload_to='images/', 
+        default='images/blank-profile-image_ztb3iv'
     )
 
     class Meta:

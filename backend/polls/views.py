@@ -2,7 +2,7 @@ from rest_framework import generics, permissions, filters, status
 from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
 from backend.permissions import IsOwnerOrReadOnly
-from .models import Poll, Vote, RunningShoe
+from .models import Poll, Vote
 from django.shortcuts import get_object_or_404, render, redirect
 from django.http import HttpResponse
 from .serializers import PollSerializer, VoteSerializer
