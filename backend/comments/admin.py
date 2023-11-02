@@ -1,3 +1,6 @@
 from django.contrib import admin
+from .models import Comment
 
-# Register your models here.
+@admin.register(Comment)
+class FollowerAdmin(admin.ModelAdmin):
+    list_display = ('owner', 'post', 'created_at', 'updated_at', 'content',)
