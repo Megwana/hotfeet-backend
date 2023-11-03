@@ -1,7 +1,23 @@
 from rest_framework import serializers
 from posts.models import Post
 from likes.models import Like
+from textblob import TextBlob
 
+def is_gibberish(text):
+
+    consecutive_consonants = 0
+    max_consecutive_consonants = 5
+
+    for char in text:
+        if char.isalpha():
+            if char.lower() not in 'aeiou':
+                consecutive_consonants += 1
+            else:
+                consecutive_consonants = 0
+            if consecutive_consonants >= max_consecutive_consonants:
+                return True
+
+    return False
 
 class PostSerializer(serializers.ModelSerializer):
     owner = serializers.ReadOnlyField(source='owner.username')
@@ -11,6 +27,29 @@ class PostSerializer(serializers.ModelSerializer):
     like_id = serializers.SerializerMethodField()
     likes_count = serializers.ReadOnlyField()
     comments_count = serializers.ReadOnlyField()
+
+    def validate(self, data):
+        title_blob = TextBlob(data['title'])
+        content_blob = TextBlob(data['content'])
+
+        if is_gibberish(data['title']):
+            raise serializers.ValidationError("Title contains gibberish, please review.")
+
+        if is_gibberish(data['content']):
+            raise serializers.ValidationError("Content contains gibberish, please review.")
+
+        return data
+    
+    def find_typos(text):
+        spell = SpellChecker()
+        words = text.split()
+        typos = set()
+
+        for word in words:
+            if not spell.correction(word) == word:
+                typos.add(word)
+
+        return typos
 
     def validate_image(self, value):
         if value.size > 1024 * 1024 * 2:

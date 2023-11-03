@@ -1,7 +1,6 @@
 from django.test import TestCase
 from django.contrib.auth.models import User
 from .models import Post
-from django.core.exceptions import ValidationError
 
 class PostModelTests(TestCase):
     def setUp(self):
@@ -21,6 +20,11 @@ class PostModelTests(TestCase):
         self.assertEqual(retrieved_post.title, 'Test Title')
         self.assertEqual(retrieved_post.content, 'Test Content')
         self.assertEqual(retrieved_post.owner, self.user)
+
+    def test_required_fields(self):
+        # Test that title is required
+        with self.assertRaises(Exception):
+            Post.objects.create(owner=self.user)
 
     def test_custom_str_method(self):
         post = Post(
