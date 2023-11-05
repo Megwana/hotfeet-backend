@@ -3,6 +3,7 @@ from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
 from backend.permissions import IsOwnerOrReadOnly
 from .models import Poll, Vote
+from .serializers import VoteSerializer, PollSerializer, VoteCreateSerializer
 from django.shortcuts import get_object_or_404, render, redirect
 from django.http import HttpResponse
 from .serializers import PollSerializer, VoteSerializer
@@ -31,14 +32,14 @@ class PollDetail(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [IsOwnerOrReadOnly]
     queryset = Poll.objects.all()
 
-    def update(self, request, *args, **kwargs):
+    def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
-        if instance.owner != request.user:
-            return Response({
-                "error": "You don't have permission to change this poll."
-                }, status=HTTP_403_FORBIDDEN)
+        serializer = self.get_serializer(instance)
 
-        return super(PollDetail, self).update(request, *args, **kwargs)
+        serialized_data = serializer.data
+        serialized_data['question'] = instance.question
+
+        return Response(serialized_data)
 
 
 class PollVoteList(generics.ListCreateAPIView):
@@ -51,64 +52,61 @@ class VoteCreate(generics.CreateAPIView):
     serializer_class = VoteSerializer
     permission_classes = [permissions.IsAuthenticated]
 
-    def get_serializer_context(self):
-        context = super().get_serializer_context()
-        poll_id = self.request.data.get('poll')
-        try:
-            poll = Poll.objects.get(pk=poll_id)
-            context['poll'] = poll
-            context['available_shoes'] = poll.shoes.all()
-        except Poll.DoesNotExist:
-            context['poll'] = None
-            context['available_shoes'] = []
-        return context
-
     def create(self, request, *args, **kwargs):
         user = request.user
-        poll = self.get_serializer_context()['poll']
-        shoe = self.get_serializer_context()['available_shoes'].filter(
-            pk=request.data['shoe']).first()
-
-        if not poll or not shoe:
+        poll_id = self.kwargs['poll_id']
+        try:
+            poll = Poll.objects.get(pk=poll_id)
+        except Poll.DoesNotExist:
             return Response(
-                {"error": "Invalid poll or shoe selection."},
-                status=status.HTTP_400_BAD_REQUEST
-                )
-
-        # Check if the user has already voted in this poll
-        has_voted = Vote.objects.filter(user=user, poll=poll).exists()
-
-        if has_voted:
-            existing_vote = Vote.objects.get(user=user, poll=poll)
-            if existing_vote.shoe == shoe:
-                # User is trying to vote for the same shoe again, reject vote
-                return Response(
-                    {"error": "You have already voted for this running shoe."},
-                    status=status.HTTP_400_BAD_REQUEST
-                    )
-            else:
-                # User has voted before, update their vote to a different shoe
-                serializer = self.get_serializer(
-                    existing_vote, data=request.data,
-                    partial=True
-                    )
-                serializer.is_valid(raise_exception=True)
-                serializer.save()
-        else:
-            # User is voting for the first time in this poll
-            serializer = self.get_serializer(data=request.data)
-            serializer.is_valid(raise_exception=True)
-            serializer.save(user=user)
-
-            # Increment vote count in the poll using F expression
-            Poll.objects.filter(pk=poll.pk).update(
-                vote_count=F('vote_count') + 1)
-
-        return Response(
-            {"message": "Your vote has been recorded."},
-            status=status.HTTP_201_CREATED
+                {"Error": "Selected poll does not exist."},
+                status=status.HTTP_404_NOT_FOUND
             )
 
+        available_shoes = poll.shoes.all()
+        if available_shoes.exists():
+            shoe_id = request.data.get('shoe')
+            shoe = available_shoes.filter(pk=shoe_id).first()
+
+            if not shoe:
+                return Response(
+                    {"Error": "Invalid shoe selection for this poll."},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            has_voted = Vote.objects.filter(user=user, poll=poll).exists()
+
+            if has_voted:
+                existing_vote = Vote.objects.get(user=user, poll=poll)
+                if existing_vote.shoe == shoe:
+                    return Response(
+                        {"Error": "You have already voted for this running shoe."},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+                else:
+                    serializer = self.get_serializer(
+                        existing_vote, data=request.data,
+                        partial=True
+                    )
+                    serializer.is_valid(raise_exception=True)
+                    serializer.save()
+            else:
+                serializer = self.get_serializer(data=request.data)
+                serializer.is_valid(raise_exception=True)
+                serializer.save(user=user, poll=poll)
+
+                # Increment vote count in the poll
+                poll.update_vote_count(increment=1)
+
+                return Response(
+                    {"Message": "Your vote has been recorded. Poll vote count: {}".format(poll.vote_count)},
+                    status=status.HTTP_201_CREATED
+                )
+        else:
+            return Response(
+                {"Error": "No options (shoes) available for this poll."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
 class VoteDelete(generics.DestroyAPIView):
     serializer_class = VoteSerializer
@@ -122,17 +120,14 @@ class VoteDelete(generics.DestroyAPIView):
 
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
-        # Get the associated poll
         poll = instance.poll
+        current_vote_count = poll.vote_count
         # Decrement the poll's vote_count
-        poll.vote_count -= 1
-        poll.save()
-        # Capture vote details before deletion
-        vote_details = VoteSerializer(instance).data
+        poll.update_vote_count(increment=-1)
         # Delete the vote
         self.perform_destroy(instance)
-        # Return vote details in the response
+        # Return the updated vote count in the response
         return Response({
-            "message": "Your vote has been removed.",
-            "unvoted_vote_details": vote_details
+            "Message": "Your vote has been removed.",
+            "Updated vote count for the poll": current_vote_count - 1
         }, status=status.HTTP_204_NO_CONTENT)

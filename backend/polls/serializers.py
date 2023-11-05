@@ -77,3 +77,17 @@ class PollSerializer(serializers.ModelSerializer):
             poll.shoes.add(shoe)
 
         return poll
+
+
+class VoteCreateSerializer(serializers.Serializer):
+    poll_id = serializers.IntegerField()
+    question = serializers.CharField()
+    shoes = serializers.PrimaryKeyRelatedField(
+        many=True,
+        queryset=Post.objects.all()
+    )
+    shoe_id = serializers.IntegerField()
+
+    def create(self, validated_data):
+        # You can implement the creation logic here if needed.
+        pass

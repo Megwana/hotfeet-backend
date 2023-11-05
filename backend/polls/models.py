@@ -3,14 +3,6 @@ from django.contrib.auth.models import User
 from posts.models import Post
 
 
-class RunningShoe(models.Model):
-    name = models.CharField(max_length=255)
-    image = models.ImageField(upload_to='shoe_images/', blank=True)
-
-    def __str__(self):
-        return self.name
-
-
 class Poll(models.Model):
     question = models.CharField(max_length=250)
     shoes = models.ManyToManyField(Post, related_name='polls')
@@ -21,6 +13,11 @@ class Poll(models.Model):
 
     def __str__(self):
         return self.question
+    
+    def update_vote_count(self, increment=1):
+        # Update the vote count, ensuring it never goes below 0
+        self.vote_count = max(self.vote_count + increment, 0)
+        self.save()
 
 
 class Vote(models.Model):
