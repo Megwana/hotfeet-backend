@@ -3,7 +3,7 @@ from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
 from backend.permissions import IsOwnerOrReadOnly
 from .models import Poll, Vote
-from .serializers import VoteSerializer, PollSerializer, VoteCreateSerializer
+from .serializers import VoteSerializer, PollSerializer, ShoeSerializer
 from django.shortcuts import get_object_or_404, render, redirect
 from django.http import HttpResponse
 from .serializers import PollSerializer, VoteSerializer
@@ -58,13 +58,14 @@ class VoteCreate(generics.CreateAPIView):
         try:
             poll = Poll.objects.get(pk=poll_id)
         except Poll.DoesNotExist:
-            return Response(
-                {"Error": "Selected poll does not exist."},
-                status=status.HTTP_404_NOT_FOUND
+            raise ValidationError(
+                {"detail": "Selected poll does not exist."},
+                code="not_found"
             )
 
         available_shoes = poll.shoes.all()
         if available_shoes.exists():
+            available_shoes_data = ShoeSerializer(available_shoes, many=True).data
             shoe_id = request.data.get('shoe')
             shoe = available_shoes.filter(pk=shoe_id).first()
 
@@ -113,10 +114,15 @@ class VoteDelete(generics.DestroyAPIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_object(self):
-        # Get the vote object for the user and the specified poll
         user = self.request.user
         poll_id = self.kwargs['poll_id']
-        return get_object_or_404(Vote, user=user, poll_id=poll_id)
+        try:
+            return get_object_or_404(Vote, user=user, poll_id=poll_id)
+        except Poll.DoesNotExist:
+            raise ValidationError(
+                {"detail": "Selected poll does not exist."},
+                code="not_found"
+            )
 
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()

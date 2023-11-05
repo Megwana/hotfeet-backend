@@ -5,10 +5,10 @@ from django.core.exceptions import ValidationError
 from textblob import TextBlob
 
 
-# class RunningShoeSerializer(serializers.ModelSerializer):
-#     class Meta:
-#         model = RunningShoe
-#         fields = ['id', 'name', 'image']
+class ShoeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Post
+        fields = ['id', 'title']
 
 
 class VoteSerializer(serializers.ModelSerializer):
@@ -79,15 +79,8 @@ class PollSerializer(serializers.ModelSerializer):
         return poll
 
 
-class VoteCreateSerializer(serializers.Serializer):
-    poll_id = serializers.IntegerField()
-    question = serializers.CharField()
-    shoes = serializers.PrimaryKeyRelatedField(
-        many=True,
-        queryset=Post.objects.all()
-    )
-    shoe_id = serializers.IntegerField()
+class VoteCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Vote
+        fields = ('poll', 'shoe')
 
-    def create(self, validated_data):
-        # You can implement the creation logic here if needed.
-        pass
